@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <input id="file-input" type="file" />
+    <script>
+      const fileInput = document.querySelector("#file-input");
+      fileInput.onchange = async (e) => {
+        try {
+          const file = e.target.files[0];
+
+          const getSignedRes = await fetch(
+            `http://localhost:3000/dailySchedule/travel-log-image-signed-url/${file.name}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization:
+                  "Bearer 어쩌구",
+              },
+            }
+          );
+          const getSignedData = await getSignedRes.json();
+
+          if (getSignedData.signedUrl) {
+            const fileUploadRes = await fetch(getSignedData.signedUrl, {
+              method: "PUT",
+              body: file,
+            });
+
+            if (fileUploadRes.ok) {
+              const splitedUrl = getSignedData.signedUrl.split("?");
+              const imageUrl = splitedUrl[0];
+              console.log("Image URL:", imageUrl);
+
+              // 이미지 URL을 서버로 전송
+              sendImageUrlToServer(imageUrl);
+            } else {
+              console.error("이미지 전송 실패", error);
+            }
+          } else {
+            console.error("signed URL 못 받아옴", error);
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      };
+
+      // 서버로 이미지 URL을 전송하는 함수
+      async function sendImageUrlToServer(imageUrl) {
+        try {
+          const response = await fetch(
+            "http://localhost:3000/dailySchedule/6620158ff92bdf71ee2b43e5/travelLog/image",
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization:
+                  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjE4OWMyOGMxMjc0NjNlYjJhYzVjZWEiLCJvYXV0aFByb3ZpZGVyIjpudWxsLCJpYXQiOjE3MTMwODg1NzN9.JVPJRfQHne0mQ_r7apNBWoK5P5_W5wGBjpTg7KqzPZo",
+              },
+              body: JSON.stringify({ imageUrl }),
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log(
+              "내가 보낸 TravelLog 이미지 주소",
+              imageUrl,
+              typeof imageUrl
+            );
+            console.log("Server response:", data);
+          } else {
+            console.error("imageURL 못 넘겨줌");
+          }
+        } catch (error) {
+          console.error("에러 보내기:", error);
+        }
+      }
+    </script>
+  </body>
+</html>

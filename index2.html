@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <input id="file-input" type="file" />
+    <script>
+      const fileInput = document.querySelector("#file-input");
+      fileInput.onchange = async (e) => {
+        try {
+          const file = e.target.files[0];
+
+          const getSignedRes = await fetch(
+            `http://localhost:3000/user/profile-image-signed-url/${file.name}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization:
+                  "Bearer 어쩌구",
+              },
+            }
+          );
+          const getSignedData = await getSignedRes.json();
+
+          if (getSignedData.signedUrl) {
+            const fileUploadRes = await fetch(getSignedData.signedUrl, {
+              method: "PUT",
+              body: file,
+            });
+
+            if (fileUploadRes.ok) {
+              const splitedUrl = getSignedData.signedUrl.split("?");
+              const imageUrl = splitedUrl[0];
+              console.log("Image URL:", imageUrl);
+
+              // 이미지 URL을 서버로 전송
+              sendImageUrlToServer(imageUrl);
+            } else {
+              console.error("이미지 업로드 실패");
+            }
+          } else {
+            console.error("URL 못 받아옴");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      };
+
+      // 서버로 이미지 URL을 전송하는 함수
+      async function sendImageUrlToServer(imageUrl) {
+        try {
+          const response = await fetch(
+            "http://localhost:3000/user/profile-image",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization:
+                  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjFkNWM5NTQyZDU3MTAzYzI3NTY3MjEiLCJvYXV0aFByb3ZpZGVyIjpudWxsLCJpYXQiOjE3MTMyMDA0OTV9.fadxYuwCFeMewJ7Tavi3yqHwmIK_ZWs1inLwpIebD-Y",
+              },
+              body: JSON.stringify({ imageUrl }),
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log(
+              "내가 보낸 프로필 이미지 주소",
+              imageUrl,
+              typeof imageUrl
+            );
+            console.log("Server response:", data);
+          } else {
+            console.error("URL 전송 못함");
+          }
+        } catch (error) {
+          console.error("전송 에러 서버로 보냄:", error);
+        }
+      }
+    </script>
+  </body>
+</html>
